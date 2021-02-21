@@ -1,0 +1,47 @@
+---
+
+nginx_version_centos: nginx-1.18.0
+nginx_version_debian: nginx=1.18.0-2
+
+php_version_centos: php74
+php_packages_centos:
+  - php
+  - php-cli
+  - php-common
+  - php-fpm
+  - php-mysql
+  - php-redis
+
+php_version_debian: php7.4
+php_packages_debian:
+  - php7.4
+  - php7.4-cli
+  - php7.4-common
+  - php7.4-fpm
+  - php7.4-mysql
+  - php7.4-redis
+
+#mysql_version_centos: 57
+mysql_version_centos: 80
+mysql_packages_centos:
+  - mysql-community-server
+
+#mysql_version_debian: 5.7
+mysql_version_debian: 8.0
+mysql_packages_debian:
+  - mysql-community-server
+
+redis_version_centos: 6.0.9
+
+redis_version_debian: 5.0.9
+redis_source_url: http://download.redis.io/releases/redis-{{ redis_version_debian }}.tar.gz
+redis_required_libs:
+  - tcl
+  - host
+  - build-essential
+
+phpmyadmin_version: 5.0.4
+phpmyadmin_app: 'phpMyAdmin-{{ phpmyadmin_version }}-all-languages'
+phpmyadmin_download_link: 'https://files.phpmyadmin.net/phpMyAdmin/{{ phpmyadmin_version }}/{{ phpmyadmin_app }}.zip'
+phpmyadmin_install_dir: /srv/phpmyadmin
+

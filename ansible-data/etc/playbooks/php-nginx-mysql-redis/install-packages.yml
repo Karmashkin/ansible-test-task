@@ -1,0 +1,296 @@
+---
+- name: os detect
+  hosts: '{{ target }}'
+  become: false
+
+  tasks:
+
+# ------------------- NGINX Centos ----------------------------------
+  - name: Add nginx yum repository
+    yum_repository:
+      name: nginx
+      description: Nginx Repository
+      baseurl: http://nginx.org/packages/centos/7/$basearch/
+      gpgkey: http://nginx.org/packages/keys/nginx_signing.key
+      gpgcheck: yes
+      priority: 2
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - nginx
+
+  - name: Install nginx_centos
+    yum:
+      name: '{{ item }}'
+    with_items:
+     - "{{ nginx_version_centos }}"
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - nginx
+
+
+# ---------------- NGINX Debian ------------------------------------
+  - name: Install dependent packages.
+    apt:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - gnupg2
+    when: ansible_distribution == 'Debian'
+    tags:
+    - nginx
+
+  - name: APT nginx key
+    apt_key: url=http://nginx.org/keys/nginx_signing.key
+    when: ansible_distribution == 'Debian'
+    tags:
+    - nginx
+
+  - name: APT nginx repository
+    apt_repository: repo="deb http://nginx.org/packages/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release }} nginx"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - nginx
+
+  - name: Install nginx_debian
+    apt:
+      name: '{{ item }}'
+    with_items:
+     - "{{ nginx_version_debian }}~{{ ansible_distribution_release }}"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - nginx
+
+# -------------------- PHP Centos -----------------------------------
+
+  - name: Install remi repo.
+    yum:
+      name: http://rpms.remirepo.net/enterprise/remi-release-{{ ansible_distribution_major_version }}.rpm
+      state: present
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - php
+
+  - name: Import remi GPG key.
+    rpm_key:
+      key: http://rpms.remirepo.net/RPM-GPG-KEY-remi
+      state: present
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - php
+
+  - name: Install php_centos
+    yum:
+       enablerepo: "remi,remi-{{ php_version_centos }}"
+       name: "{{ php_packages_centos }}"
+       update_cache: yes
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - php
+
+
+# --------------------- PHP Debian ----------------------------------
+
+  - name: Add dependencies for PHP
+    apt:
+      name:
+        - apt-transport-https
+        - ca-certificates
+      state: present
+    when: ansible_distribution == "Debian"
+    tags:
+    - php
+
+  - name: Add Ondrej Sury apt key (Debian).
+    apt_key:
+      url: https://packages.sury.org/php/apt.gpg
+      state: present
+    when: ansible_distribution == "Debian"
+    tags:
+    - php
+
+  - name: Add Ondrej Sury repo (Debian).
+    apt_repository:
+      repo: "deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main"
+      state: present
+    when: ansible_distribution == "Debian"
+    tags:
+    - php
+
+  - name: Update apt caches after repo is added (Debian).
+    apt: update_cache=true
+    when: ansible_distribution == "Debian"
+    tags:
+    - php
+
+  - name: Install php_debian.
+    apt:
+      name: "{{ php_packages_debian }}"
+      state: present
+    when: ansible_distribution == "Debian"
+    tags:
+    - php
+
+# -------------------- MySQL Centos ------------------------------
+
+  - name: Add MySQL 80 Yum Repository
+    yum:
+      name: "https://repo.mysql.com/mysql{{ mysql_version_centos }}-community-release-el7-3.noarch.rpm"
+      state: present
+    when: ( ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' ) and "{{ mysql_version_centos }}" == "80"
+    tags:
+    - mysql
+
+  - name: Add MySQL 57 Yum Repository
+    yum:
+      name: "http://dev.mysql.com/get/mysql{{ mysql_version_centos }}-community-release-el{{ ansible_distribution_version | replace('.', '-') }}.noarch.rpm"
+      state: present
+    when: ( ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux' ) and "{{ mysql_version_centos }}" == "57"
+    tags:
+    - mysql
+
+  - name: Install mysql_centos
+    yum:
+      enablerepo: "mysql{{ mysql_version_centos }}-community"
+      name: "{{ mysql_packages_centos }}"
+      state: present
+      update_cache: yes
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - mysql
+
+# -------------------- MySQL Debian ------------------------------
+
+  - name: Add MySQL repository key
+    apt_key: url=http://repo.mysql.com/RPM-GPG-KEY-mysql state=present
+    when: ansible_distribution == 'Debian'
+    tags:
+    - mysql
+
+  - name: Add APT repository mysql
+    apt_repository:
+      repo: "deb http://repo.mysql.com/apt/{{ ansible_distribution|lower }}/ {{ ansible_distribution_release }} mysql-{{ mysql_version_debian }}"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - mysql
+
+  - name: Install mysql_debian
+    apt:
+      name: "{{ mysql_packages_debian }}"
+      state: present
+      update_cache: yes
+    when: ansible_distribution == 'Debian'
+    tags:
+    - mysql
+
+# -------------------- Redis Centos ------------------------------
+
+  - name: RPM install redis from remi
+    yum: name=http://rpms.remirepo.net/store/redis/{{ redis_version_centos }}/redis-{{ redis_version_centos }}-1.el7.remi.x86_64.rpm
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - redis
+
+# -------------------- Redis Debian ------------------------------
+
+#  - name: Adding APT repository
+#    apt_repository:
+#      repo: deb http://deb.debian.org/debian {{ ansible_distribution_release }}-backports main
+#      state: present
+#      filename: backports
+#      update_cache: yes
+#    when: ansible_distribution == 'Debian'
+#    tags:
+#    - redis
+
+#  - name: Install redis_debian
+#    apt:
+#      name: '{{ item }}'
+#      default_release: "{{ ansible_distribution_release }}-backports"
+#    with_items:
+#     - "redis"
+#    when: ansible_distribution == 'Debian'
+#    tags:
+#    - redis
+
+# ook.. debs not found, trying src way
+# https://github.com/idealista/redis_role
+
+  - name: Redis install required libs
+    apt:
+      name: "{{ redis_required_libs }}"
+      update_cache: true
+      state: present
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+  - name: Redis download sources
+    get_url:
+      url: "{{ redis_source_url }}"
+      dest: /tmp
+      validate_certs: no
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+  - name: Redis extract sources
+    unarchive:
+      copy: no
+      src: "/tmp/redis-{{ redis_version_debian }}.tar.gz"
+      dest: "/tmp"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+  - name: Redis move sources to build path
+    command: "mv /tmp/redis-{{ redis_version_debian }} /usr/src/redis"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+  - name: Redis make
+    make:
+      chdir: "/usr/src/redis"
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+  - name: Redis make install
+    make:
+      chdir: "/usr/src/redis"
+      target: install
+    when: ansible_distribution == 'Debian'
+    tags:
+    - redis
+
+# -------------------- phpmyadmin Centos\Debian ------------------------------
+
+  - name: phpmyadmin install required libs Debian
+    apt:
+      name: "unzip"
+      update_cache: true
+      state: present
+    when: ansible_distribution == 'Debian'
+    tags:
+    - phpmyadmins
+
+  - name: phpmyadmin install required libs Centos
+    yum:
+      name: "unzip"
+      state: present
+      update_cache: yes
+    when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+    tags:
+    - phpmyadmins
+
+  - name: Create the phpmyadmin download directory
+    file: dest={{ phpmyadmin_install_dir }} state=directory
+    tags:
+    - phpmyadmins
+
+  - name: Download and unarchive the phpMyAdmin distribution
+    unarchive: remote_src=yes src={{ phpmyadmin_download_link }} dest={{ phpmyadmin_install_dir }}
+    tags:
+    - phpmyadmins
+
+

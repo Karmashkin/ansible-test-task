@@ -39,6 +39,7 @@ playbooks/php-nginx-mysql-redis/group_vars/all
 2. then run
 ```
 ansible-playbook playbooks/php-nginx-mysql-redis/install-packages.yml --extra-vars "target=testvms"
+ansible-playbook playbooks/php-nginx-mysql-redis/install-packages.yml --tags nginx --extra-vars "target=testvms"
 
 ```
 

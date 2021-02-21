@@ -1,0 +1,17 @@
+version: '2.2'
+
+services:
+  ansible:
+    build: ./ansible
+    image: 'dockerhub.zolotous.com/ansible-alpine:v.0.1.1'
+    restart: always
+    container_name: 'ansible-alpine'
+    hostname: ansible-alpine.local
+    environment:
+      - TZ=Europe/Kiev
+      - TIMEZONE=Europe/Kiev
+    volumes:
+      - ./ansible-data/etc:/etc/ansible
+      - ./ansible-data/home:/root
+    command: sleep infinity
+
